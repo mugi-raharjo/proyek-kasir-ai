@@ -1,12 +1,6 @@
+from utils import hitung_subtotal, format_rupiah
+
 daftar_barang = []
-
-def hitung_subtotal(harga, jumlah):
-    subtotal = harga * jumlah
-    return subtotal
-
-def format_rupiah(angka):
-    hasil = format(angka, ",").replace(",", ".")
-    return "Rp " + hasil
 
 total = 0
 jawaban = "ya"
