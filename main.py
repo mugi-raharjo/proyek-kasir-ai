@@ -1,17 +1,57 @@
 from utils import hitung_subtotal, format_rupiah
 
-daftar_barang = []
+def tampilkan_struk(daftar_barang, total):
+    print("\n===== STRUK BELANJA =====")
 
-total = 0
-jawaban = "ya"
+    for barang in daftar_barang:
+        print("Nama barang:", barang["nama"])
+        print("Harga:", format_rupiah(barang["harga"]))
+        print("Jumlah:", barang["jumlah"])
+        print("Subtotal:", format_rupiah(barang["subtotal"]))
 
-while jawaban == "ya":
-    nama_barang = input("Masukan nama barang: ")
-    harga = int(input("Masukan harga barang: "))
-    jumlah = int(input("Masukan jumlah barang: "))
+    print("--------------------------------")
+    print("Total belanja:", format_rupiah(total))
+
+def proses_pembayaran(total):
+    uang_diterima = 0
+
+    while uang_diterima < total:
+        bayar = input_angka("Masukkan pembayaran: ")
+        uang_diterima = uang_diterima + bayar
+
+        if uang_diterima < total:
+            kurang = total - uang_diterima
+            print("Uang pembayaran masih kurang:", format_rupiah(kurang))
+        else:
+            kembalian = uang_diterima - total
+            print("Kembalian:", format_rupiah(kembalian))
+
+def input_angka(pesan):
+    while True:
+        try:
+            angka = int(input(pesan))
+
+            if angka > 0:
+                return angka
+            else:
+                print("Angka harus lebih dari 0!")
+
+        except ValueError:
+            print("Input harus berupa angka! Coba lagi.")
+
+def input_barang():
+    while True:
+        nama_barang = input("Masukan nama barang: ").strip()
+
+        if nama_barang != "":
+            break
+        else:
+            print("Nama tidak boleh kosong!")
+
+    harga = input_angka("Masukan harga barang: ")
+    jumlah = input_angka("Masukan jumlah barang: ")
 
     subtotal = hitung_subtotal(harga, jumlah)
-    total = total + subtotal
 
     barang = {
         "nama": nama_barang,
@@ -20,30 +60,37 @@ while jawaban == "ya":
         "subtotal": subtotal
     }
 
-    daftar_barang.append(barang)
+    return barang
 
-    print("Subtotal barang:", format_rupiah(subtotal))
+def main():
+    daftar_barang = []
 
-    jawaban = input("Tambah barang lagi? ")
+    total = 0
+    jawaban = "ya"
 
-print("\n===== STRUK BELANJA =====")
+    while jawaban == "ya":
+        barang = input_barang()
 
-for barang in daftar_barang:
-    print("Nama barang:", barang["nama"])
-    print("Harga:", format_rupiah(barang["harga"]))
-    print("Jumlah:", barang["jumlah"])
-    print("Subtotal:", format_rupiah(barang["subtotal"]))
+        subtotal = barang["subtotal"]
+        total = total + subtotal
 
-print("------------------------------")
-print("Total belanja:", format_rupiah(total))
+        daftar_barang.append(barang)
 
-bayar = int(input("Masukan uang pembayaran: "))
+        print("Subtotal barang:", format_rupiah(subtotal))
 
-if bayar >= total:
-    kembalian = bayar - total
-    print("Kembalian:", format_rupiah(kembalian))
-else:
-    kurang = total - bayar
-    print("Uang pembayaran kurang:", format_rupiah(kurang))
+        while True:
+            jawaban = input("Tambah barang lagi? ").strip().lower()
 
-print("===== TERIMA KASIH =====")
+            if jawaban == "ya" or jawaban == "tidak":
+                break
+
+            print("Jawaban harus berupa ya atau tidak!")
+
+    tampilkan_struk(daftar_barang, total)
+
+    proses_pembayaran(total)
+
+    print("===== TERIMA KASIH =====")
+
+if __name__ == "__main__":
+    main()
