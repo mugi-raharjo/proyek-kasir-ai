@@ -9,5 +9,6 @@ def hitung_subtotal(harga, jumlah):
     return subtotal
 
 def format_rupiah(angka):
+    angka = round(angka)
     hasil = format(angka, ",").replace(",", ".")
     return "Rp " + hasil

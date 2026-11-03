@@ -1,10 +1,13 @@
 from utils import hitung_subtotal, format_rupiah
+
 from database import (
     get_products,
     simpan_transaksi,
     get_riwayat_transaksi,
     get_detail_transaksi
 )
+
+from analisis_penjualan import menu_analisis
 
 def tampilkan_struk(daftar_barang, total):
     print("\n===== STRUK BELANJA =====")
@@ -219,7 +222,8 @@ def main():
         print("1. Transaksi baru")
         print("2. Riwayat transaksi")
         print("3. Detail transaksi")
-        print("4. Keluar")
+        print("4. Analisis penjualan")
+        print("5. Keluar")
 
         pilihan = input("Pilih menu: ").strip()
 
@@ -297,11 +301,14 @@ def main():
             tampilkan_detail_transaksi()
 
         elif pilihan == "4":
+            menu_analisis()
+
+        elif pilihan == "5":
             print("Program kasir ditutup.")
             break
 
         else:
-            print("Pilihan tidak valid. Masukkan 1, 2, 3, atau 4.")
+            print("Pilihan tidak valid. Masukkan 1, 2, 3, 4, atau 5.")
 
 
 if __name__ == "__main__":

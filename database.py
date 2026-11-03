@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-
 def get_connection():
     koneksi = mysql.connector.connect(
         host=os.getenv("DB_HOST", "localhost"),
@@ -155,3 +154,111 @@ def get_detail_transaksi(id_transaksi):
     koneksi.close()
 
     return detail
+
+def get_data_analisis_produk():
+    koneksi = get_connection()
+    cursor = koneksi.cursor(dictionary=True)
+
+    cursor.execute(
+        """
+        SELECT
+            produk.id AS produk_id,
+            produk.nama,
+            SUM(detail_transaksi.jumlah) AS total_terjual,
+            SUM(detail_transaksi.subtotal) AS total_pendapatan
+        FROM detail_transaksi
+        JOIN produk
+        ON detail_transaksi.produk_id = produk.id
+        GROUP BY produk.id, produk.nama
+        ORDER BY total_terjual DESC
+        """
+    )
+
+    data_produk = cursor.fetchall()
+
+    cursor.close()
+    koneksi.close()
+
+    return data_produk
+
+def get_ringkasan_penjualan():
+    koneksi = get_connection()
+    cursor = koneksi.cursor(dictionary=True)
+
+    cursor.execute(
+        """
+        SELECT
+            COUNT(*) AS jumlah_transaksi,
+            COALESCE(SUM(total), 0) AS total_omzet,
+            COALESCE(AVG(total), 0) AS rata_rata_transaksi
+        FROM transaksi
+        """
+    )
+
+    ringkasan = cursor.fetchone()
+
+    cursor.close()
+    koneksi.close()
+
+    return ringkasan
+
+def get_omzet_harian():
+    koneksi = get_connection()
+    cursor = koneksi.cursor(dictionary=True)
+
+    cursor.execute(
+        """
+        SELECT
+            DATE(tanggal) AS tanggal,
+            SUM(total) AS omzet
+        FROM transaksi
+        GROUP BY DATE(tanggal)
+        ORDER BY tanggal ASC
+        """
+    )
+
+    data_harian = cursor.fetchall()
+
+    cursor.close()
+    koneksi.close()
+
+    return data_harian
+
+
+def get_data_penjualan_produk():
+    koneksi = get_connection()
+    cursor = koneksi.cursor(dictionary=True)
+
+    cursor.execute(
+        """
+        SELECT
+            produk.id AS produk_id,
+            produk.nama,
+            produk.stok,
+            COALESCE(
+                SUM(
+                    CASE
+                        WHEN transaksi.id IS NOT NULL
+                        THEN detail_transaksi.jumlah
+                        ELSE 0
+                    END
+                ), 0
+            ) AS total_terjual
+        FROM produk
+        LEFT JOIN detail_transaksi
+        ON produk.id = detail_transaksi.produk_id
+        LEFT JOIN transaksi
+        ON detail_transaksi.transaksi_id = transaksi.id
+        AND transaksi.tanggal >= '2026-10-27 00:00:00'
+        AND transaksi.tanggal < '2026-11-03 00:00:00'
+        GROUP BY produk.id, produk.nama, produk.stok
+        ORDER BY total_terjual DESC
+        """
+    )
+
+    data_produk = cursor.fetchall()
+
+    cursor.close()
+    koneksi.close()
+
+    return data_produk
