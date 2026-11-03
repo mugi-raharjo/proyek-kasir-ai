@@ -1,30 +1,30 @@
+import unittest
+
 from utils import hitung_subtotal, format_rupiah
 
-assert hitung_subtotal(10000, 2) == 20000
-assert hitung_subtotal(15000, 3) == 45000
-assert hitung_subtotal(5000, 1) == 5000
 
-assert format_rupiah(26000) == "Rp 26.000"
+class TestUtils(unittest.TestCase):
 
-try:
-    hitung_subtotal(10000, 0)
-except ValueError:
-    pass
-else:
-    raise AssertionError("Jumlah nol seharusnya ditolak!")
+    def test_hitung_subtotal(self):
+        self.assertEqual(hitung_subtotal(10000, 2), 20000)
+        self.assertEqual(hitung_subtotal(15000, 3), 45000)
+        self.assertEqual(hitung_subtotal(5000, 1), 5000)
 
-try:
-    hitung_subtotal(0, 2)
-except ValueError:
-    pass
-else:
-    raise AssertionError("Harga nol seharusnya ditolak!")
+    def test_format_rupiah(self):
+        self.assertEqual(format_rupiah(26000), "Rp 26.000")
 
-try:
-    hitung_subtotal(10000, -2)
-except ValueError:
-    pass
-else:
-    raise AssertionError("Jumlah negatif seharusnya ditolak!")
+    def test_jumlah_nol(self):
+        with self.assertRaises(ValueError):
+            hitung_subtotal(10000, 0)
 
-print("Semua pengujian berhasil!")
+    def test_harga_nol(self):
+        with self.assertRaises(ValueError):
+            hitung_subtotal(0, 2)
+
+    def test_jumlah_negatif(self):
+        with self.assertRaises(ValueError):
+            hitung_subtotal(10000, -2)
+
+
+if __name__ == "__main__":
+    unittest.main()

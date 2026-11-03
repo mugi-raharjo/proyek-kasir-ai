@@ -29,10 +29,105 @@ def get_products():
     return produk
 
 def simpan_transaksi(daftar_barang, total, uang_diterima, kembalian):
-    koneksi = get_connection()
-    cursor = koneksi.cursor()
+
+    if not isinstance(daftar_barang, list) or not daftar_barang:
+        raise ValueError("Keranjang transaksi tidak boleh kosong.")
+
+    if not all(
+        isinstance(nilai, int) and not isinstance(nilai, bool)
+        for nilai in [total, uang_diterima, kembalian]
+    ):
+        raise ValueError(
+            "Total, pembayaran, dan kembalian harus berupa bilangan bulat."
+        )
+
+    total_validasi = 0
+
+    for barang in daftar_barang:
+        if not isinstance(barang, dict):
+            raise ValueError("Setiap barang harus berupa dictionary.")
+
+        kolom_wajib = [
+            "produk_id",
+            "nama",
+            "harga",
+            "jumlah",
+            "subtotal"
+        ]
+
+        if not all(kolom in barang for kolom in kolom_wajib):
+            raise ValueError("Data barang tidak lengkap.")
+        produk_id = barang["produk_id"]
+        harga = barang["harga"]
+        jumlah = barang["jumlah"]
+        subtotal = barang["subtotal"]
+
+        if not all(
+            isinstance(nilai, int) and not isinstance(nilai, bool)
+            for nilai in [produk_id, harga, jumlah, subtotal]
+        ):
+            raise ValueError("Data barang harus berupa bilangan bulat.")
+
+        if produk_id <= 0 or harga <= 0 or jumlah <= 0:
+            raise ValueError("ID, harga, dan jumlah harus lebih dari 0.")
+
+        subtotal_validasi = harga * jumlah
+
+        if subtotal != subtotal_validasi:
+            raise ValueError(
+                f"Subtotal barang {barang['nama']} tidak sesuai."
+            )
+
+        total_validasi += subtotal_validasi
+
+    if total != total_validasi:
+        raise ValueError("Total transaksi tidak sesuai dengan detail barang.")
+
+    if uang_diterima < total_validasi:
+        raise ValueError("Uang pembayaran tidak mencukupi.")
+
+    if kembalian != uang_diterima - total_validasi:
+        raise ValueError("Perhitungan kembalian tidak sesuai.")
+
+    koneksi = None
+    cursor = None
 
     try:
+        koneksi = get_connection()
+        cursor = koneksi.cursor()
+
+        # Memeriksa harga dan stok terbaru dari database
+        for barang in daftar_barang:
+            cursor.execute(
+                """
+                SELECT harga, stok
+                FROM produk
+                WHERE id = %s
+                FOR UPDATE
+                """,
+                (barang["produk_id"],)
+            )
+
+            produk = cursor.fetchone()
+
+            if produk is None:
+                raise ValueError(
+                    f"Produk {barang['nama']} tidak ditemukan."
+                )
+
+            harga_database, stok_database = produk
+
+            if barang["harga"] != harga_database:
+                raise ValueError(
+                    f"Harga produk {barang['nama']} telah berubah."
+                )
+
+            if barang["jumlah"] > stok_database:
+                raise ValueError(
+                    f"Stok produk {barang['nama']} tidak mencukupi."
+                )
+
+        # Menyimpan data transaksi utama
         cursor.execute(
             """
             INSERT INTO transaksi (total, uang_diterima, kembalian)
@@ -81,12 +176,16 @@ def simpan_transaksi(daftar_barang, total, uang_diterima, kembalian):
         return transaksi_id
 
     except Exception:
-        koneksi.rollback()
+        if koneksi is not None:
+            koneksi.rollback()
         raise
 
     finally:
-        cursor.close()
-        koneksi.close()
+        if cursor is not None:
+            cursor.close()
+
+        if koneksi is not None:
+            koneksi.close()
 
 def get_riwayat_transaksi():
     koneksi = get_connection()
