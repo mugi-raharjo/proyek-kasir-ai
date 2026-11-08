@@ -15,6 +15,17 @@ def get_connection():
     return koneksi
 
 
+def get_test_connection():
+    koneksi = mysql.connector.connect(
+        host=os.getenv("DB_HOST", "localhost"),
+        port=int(os.getenv("DB_PORT", "3306")),
+        user=os.getenv("DB_USER", "root"),
+        password=os.getenv("DB_PASSWORD", ""),
+        database="db_kasir_test"
+    )
+    return koneksi
+
+
 def get_products():
     koneksi = get_connection()
     cursor = koneksi.cursor(dictionary=True)
@@ -27,6 +38,139 @@ def get_products():
     koneksi.close()
 
     return produk
+
+def get_product_by_id(produk_id):
+    koneksi = get_connection()
+    cursor = koneksi.cursor(dictionary=True)
+
+    cursor.execute(
+        "SELECT id, nama, harga, stok, aktif FROM produk WHERE id = %s",
+        (produk_id,)
+    )
+
+    produk = cursor.fetchone()
+
+    cursor.close()
+    koneksi.close()
+
+    return produk
+
+def tambah_produk(nama, harga, stok):
+    koneksi = get_connection()
+    cursor = koneksi.cursor()
+
+    try:
+        cursor.execute(
+            "INSERT INTO produk (nama, harga, stok) VALUES (%s, %s, %s)",
+            (nama, harga, stok)
+        )
+
+        koneksi.commit()
+
+        produk_id = cursor.lastrowid
+
+        return produk_id
+
+    except Exception:
+        koneksi.rollback()
+        raise
+
+    finally:
+        cursor.close()
+        koneksi.close()
+
+
+def update_produk(produk_id, nama, harga, stok):
+    koneksi = get_connection()
+    cursor = koneksi.cursor()
+
+    try:
+        cursor.execute(
+            """
+            UPDATE produk
+            SET nama = %s, harga = %s, stok = %s
+            WHERE id = %s
+            """,
+            (nama, harga, stok, produk_id)
+        )
+
+        if cursor.rowcount == 0:
+            koneksi.rollback()
+            return False
+
+        koneksi.commit()
+        return True
+
+    except Exception:
+        koneksi.rollback()
+        raise
+
+    finally:
+        cursor.close()
+        koneksi.close()
+
+
+def produk_memiliki_transaksi(produk_id):
+    koneksi = get_connection()
+    cursor = koneksi.cursor()
+
+    try:
+        cursor.execute(
+            "SELECT COUNT(*) FROM detail_transaksi WHERE produk_id = %s",
+            (produk_id,)
+        )
+
+        hasil = cursor.fetchone()
+
+        return hasil[0] > 0
+
+    finally:
+        cursor.close()
+        koneksi.close()
+
+def hapus_produk(produk_id):
+    koneksi = get_connection()
+    cursor = koneksi.cursor()
+
+    try:
+        cursor.execute(
+            "DELETE FROM produk WHERE id = %s",
+            (produk_id,)
+        )
+
+        koneksi.commit()
+
+        return True
+
+    except Exception:
+        koneksi.rollback()
+        raise
+
+    finally:
+        cursor.close()
+        koneksi.close()
+
+def nonaktifkan_produk(produk_id):
+    koneksi = get_connection()
+    cursor = koneksi.cursor()
+
+    try:
+        cursor.execute(
+            "UPDATE produk SET aktif = 0 WHERE id = %s",
+            (produk_id,)
+        )
+
+        koneksi.commit()
+
+        return True
+
+    except Exception:
+        koneksi.rollback()
+        raise
+
+    finally:
+        cursor.close()
+        koneksi.close()
 
 def simpan_transaksi(daftar_barang, total, uang_diterima, kembalian):
 
@@ -96,11 +240,10 @@ def simpan_transaksi(daftar_barang, total, uang_diterima, kembalian):
         koneksi = get_connection()
         cursor = koneksi.cursor()
 
-        # Memeriksa harga dan stok terbaru dari database
         for barang in daftar_barang:
             cursor.execute(
                 """
-                SELECT harga, stok
+                SELECT harga, stok, aktif
                 FROM produk
                 WHERE id = %s
                 FOR UPDATE
@@ -115,7 +258,12 @@ def simpan_transaksi(daftar_barang, total, uang_diterima, kembalian):
                     f"Produk {barang['nama']} tidak ditemukan."
                 )
 
-            harga_database, stok_database = produk
+            harga_database, stok_database, aktif_database = produk
+
+            if aktif_database == 0:
+                raise ValueError(
+                    f"Produk {barang['nama']} sudah tidak aktif."
+                )
 
             if barang["harga"] != harga_database:
                 raise ValueError(
@@ -127,7 +275,6 @@ def simpan_transaksi(daftar_barang, total, uang_diterima, kembalian):
                     f"Stok produk {barang['nama']} tidak mencukupi."
                 )
 
-        # Menyimpan data transaksi utama
         cursor.execute(
             """
             INSERT INTO transaksi (total, uang_diterima, kembalian)
