@@ -14,6 +14,10 @@ Program kasir berbasis Python yang menggunakan MySQL untuk mengelola produk, sto
 - Memformat nominal uang dalam Rupiah.
 - Menyediakan API untuk pengelolaan produk dan transaksi.
 - Melakukan validasi request dan pengujian otomatis API.
+- Menganalisis produk terlaris dan pendapatan setiap produk.
+- Menampilkan ringkasan penjualan dan tren omzet harian.
+- Menghitung rata-rata penjualan dan kebutuhan stok.
+- Menampilkan grafik penjualan menggunakan Matplotlib.
 
 ## Teknologi
 
@@ -36,10 +40,13 @@ proyek-kasir-ai/
 ├── database.py
 ├── utils.py
 ├── analisis_penjualan.py
-├── test_utils.py
+├── test_api.py
 ├── test_database.py
 ├── test_riwayat.py
-├── test_api.py
+├── test_stok.py
+├── test_utils.py
+├── test_validasi_database.py
+├── test_validasi_transaksi.py
 ├── requirements.txt
 ├── .gitignore
 └── README.md
@@ -109,6 +116,11 @@ python -m unittest test_api -v
 
 Pengujian API menggunakan database pengujian `db_kasir_test` agar perubahan selama pengujian tidak memengaruhi database utama `db_kasir`.
 
+File pengujian lainnya:
+- `test_stok.py`: menguji fungsi terkait stok.
+- `test_validasi_database.py`: menguji validasi pada proses database.
+- `test_validasi_transaksi.py`: menguji validasi transaksi.
+
 ## Dokumentasi API
 
 API Kasir AI dibangun menggunakan FastAPI dan terhubung dengan database MySQL.
@@ -123,15 +135,11 @@ python -m uvicorn api:app --reload
 
 Alamat lokal API:
 
-```text
 http://127.0.0.1:8000
-```
 
 Dokumentasi interaktif Swagger UI:
 
-```text
 http://127.0.0.1:8000/docs
-```
 
 ### Daftar Endpoint
 
@@ -360,8 +368,8 @@ Contoh response:
     "id": 15,
     "tanggal": "2026-11-08T09:30:00",
     "total": 29000,
-    "uang_diterima": 30000,
-    "kembalian": 1000,
+    "uang_diterima": 50000,
+    "kembalian": 21000,
     "nama": "Buku",
     "harga": 10000,
     "jumlah": 2,
@@ -371,8 +379,8 @@ Contoh response:
     "id": 15,
     "tanggal": "2026-11-08T09:30:00",
     "total": 29000,
-    "uang_diterima": 30000,
-    "kembalian": 1000,
+    "uang_diterima": 50000,
+    "kembalian": 21000,
     "nama": "Pensil",
     "harga": 3000,
     "jumlah": 3,
@@ -433,8 +441,13 @@ Response gagal — 404 Not Found
 
 ## Catatan Pengembangan
 
-Proyek ini dikembangkan secara bertahap sebagai sarana belajar Python, database, SQL, pengujian, Git, GitHub, dan pengembangan API.
+Proyek ini dikembangkan secara bertahap sebagai sarana penerapan Python, SQL, MySQL, pengolahan data, pengujian perangkat lunak, Git, GitHub, dan REST API.
 
-Walaupun nama repositorinya `proyek-kasir-ai`, versi saat ini berfokus pada aplikasi kasir berbasis Python dan MySQL yang dilengkapi REST API.
+Versi saat ini sudah memiliki fitur analisis penjualan dan analisis kebutuhan stok menggunakan rata-rata penjualan, Reorder Point (ROP), dan Safety Stock.
 
-Fitur AI akan dikembangkan pada tahap berikutnya, meliputi analisis penjualan, prediksi kebutuhan stok, rekomendasi produk, dan asisten kasir berbasis LLM.
+Analisis tersebut masih menggunakan perhitungan berbasis aturan dan belum menggunakan Machine Learning.
+
+Pengembangan berikutnya direncanakan mencakup:
+- Prediksi permintaan dan kebutuhan stok menggunakan Machine Learning.
+- Rekomendasi produk berdasarkan pola pembelian.
+- Asisten kasir berbasis Large Language Model (LLM).
