@@ -1,6 +1,7 @@
 import os
 import mysql.connector
 from dotenv import load_dotenv
+from datetime import datetime, timedelta
 
 load_dotenv()
 
@@ -471,7 +472,10 @@ def get_omzet_harian():
     return data_harian
 
 
-def get_data_penjualan_produk():
+def get_data_penjualan_produk(jumlah_hari):
+    tanggal_akhir = datetime.now()
+    tanggal_awal = tanggal_akhir - timedelta(days=jumlah_hari)
+
     koneksi = get_connection()
     cursor = koneksi.cursor(dictionary=True)
 
@@ -495,11 +499,13 @@ def get_data_penjualan_produk():
         ON produk.id = detail_transaksi.produk_id
         LEFT JOIN transaksi
         ON detail_transaksi.transaksi_id = transaksi.id
-        AND transaksi.tanggal >= '2026-10-27 00:00:00'
-        AND transaksi.tanggal < '2026-11-03 00:00:00'
+        AND transaksi.tanggal >= %s
+        AND transaksi.tanggal < %s
+        WHERE produk.aktif = 1
         GROUP BY produk.id, produk.nama, produk.stok
         ORDER BY total_terjual DESC
-        """
+        """,
+        (tanggal_awal, tanggal_akhir)
     )
 
     data_produk = cursor.fetchall()

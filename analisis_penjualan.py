@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import pandas as pd
+from math import ceil
 
 from database import (
     get_data_analisis_produk,
@@ -140,9 +141,9 @@ def grafik_omzet_harian():
 
 
 def analisis_rata_rata_penjualan():
-    data_produk = get_data_penjualan_produk()
-
     jumlah_hari = 7
+
+    data_produk = get_data_penjualan_produk(jumlah_hari)
 
     print("\n===== RATA-RATA PENJUALAN HARIAN =====")
 
@@ -157,9 +158,10 @@ def analisis_rata_rata_penjualan():
 
 
 def analisis_kebutuhan_stok():
-    data_produk = get_data_penjualan_produk()
-
     jumlah_hari = 7
+
+    data_produk = get_data_penjualan_produk(jumlah_hari)
+
     lead_time = 3
     safety_stock = 5
 
@@ -174,12 +176,9 @@ def analisis_kebutuhan_stok():
 
         target_stok = (rata_rata * jumlah_hari) + safety_stock
 
-        jumlah_pemesanan = target_stok - stok
+        jumlah_pemesanan = max(0, ceil(target_stok - stok))
 
-        if jumlah_pemesanan < 0:
-            jumlah_pemesanan = 0
-
-        if stok <= rop:
+        if stok < rop:
             status = "PERLU PESAN ULANG"
         else:
             status = "STOK AMAN"
@@ -188,9 +187,9 @@ def analisis_kebutuhan_stok():
         print("Stok Saat Ini:", stok)
         print("Rata-rata Penjualan:", round(rata_rata, 2))
         print("Reorder Point:", round(rop, 2))
-        print("Target Stok:", round(target_stok))
+        print("Target Stok:", ceil(target_stok))
         print("Status:", status)
-        print("Jumlah Pemesanan:", round(jumlah_pemesanan))
+        print("Jumlah Pemesanan:", jumlah_pemesanan)
 
 
 def menu_analisis():
